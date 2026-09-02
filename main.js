@@ -24,7 +24,11 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xd9d9d9);
 
 const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.set(-0.32, 0.83, 0.97);
+// Rotated 90 degrees to the right from the original (-0.32, 0.83, 0.97)
+// framing, orbiting around the vertical (Y) axis at the same height/distance.
+// If this ends up rotated the wrong way, swap to (0.97, 0.83, 0.32) instead -
+// that's the same 90-degree turn in the opposite direction.
+camera.position.set(-0.97, 0.83, -0.32);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -397,9 +401,9 @@ document.getElementById('btn-load-factory').addEventListener('click', () => {
 // a slide moving the wrong way (or not at all), just change the `axis`
 // value below for that entry - nothing else needs to change.
 const AXIS_CONFIG = {
-  PosX: { nodeName: 'Slide_X', axis: 'x', valueElementId: 'val-x' },
-  PosY: { nodeName: 'Slide_Y', axis: 'z', valueElementId: 'val-y' }, // confirmed: Y moves on local z, not y
-  PosZ: { nodeName: 'Slide_Z', axis: 'y', valueElementId: 'val-z' }  // confirmed: Z moves on local y, not z
+  PosX: { nodeName: 'Slide_X', axis: 'x', valueElementId: 'val-x', sign: 1 },
+  PosY: { nodeName: 'Slide_Y', axis: 'z', valueElementId: 'val-y', sign: 1 }, // confirmed: Y moves on local z, not y
+  PosZ: { nodeName: 'Slide_Z', axis: 'y', valueElementId: 'val-z', sign: -1 } // confirmed: Z moves on local y, and in the opposite direction
 };
 
 // Populated once the model loads: { PosX: { node, axis, initial, target }, ... }
@@ -429,6 +433,7 @@ loader.load(
           axisState[key] = {
             node: child,
             axis: cfg.axis,
+            sign: cfg.sign,
             initial: child.position[cfg.axis],
             target: 0
           };
@@ -467,8 +472,8 @@ loader.load(
 // 5. ANIMATION & RENDER LOOP
 // ==========================================
 function animate(timestamp, frame) {
-  Object.values(axisState).forEach(({ node, axis, initial, target }) => {
-    const targetValue = initial + (target * SCALE_FACTOR);
+  Object.values(axisState).forEach(({ node, axis, sign, initial, target }) => {
+    const targetValue = initial + (target * SCALE_FACTOR * sign);
     node.position[axis] += (targetValue - node.position[axis]) * LERP_FACTOR;
   });
 
