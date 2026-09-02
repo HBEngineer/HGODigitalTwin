@@ -398,14 +398,18 @@ document.getElementById('btn-load-factory').addEventListener('click', () => {
 // value below for that entry - nothing else needs to change.
 const AXIS_CONFIG = {
   PosX: { nodeName: 'Slide_X', axis: 'x', valueElementId: 'val-x' },
-  PosY: { nodeName: 'Slide_Y', axis: 'y', valueElementId: 'val-y' },
-  PosZ: { nodeName: 'Slide_Z', axis: 'z', valueElementId: 'val-z' }
+  PosY: { nodeName: 'Slide_Y', axis: 'z', valueElementId: 'val-y' }, // confirmed: Y moves on local z, not y
+  PosZ: { nodeName: 'Slide_Z', axis: 'y', valueElementId: 'val-z' }  // confirmed: Z moves on local y, not z
 };
 
 // Populated once the model loads: { PosX: { node, axis, initial, target }, ... }
 const axisState = {};
 
-const SCALE_FACTOR = 1;
+// MQTT payload values are in millimeters, but glTF/GLB world units are
+// meters by convention - confirmed empirically ({"PosX": 1} moved 1 full
+// meter instead of 1mm). This converts mm -> m before applying as a
+// position offset.
+const SCALE_FACTOR = 0.001;
 const LERP_FACTOR = 0.08;
 
 const loader = new GLTFLoader();
