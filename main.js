@@ -21,14 +21,17 @@ const MQTT_TOPIC = "festo/hgosydney/positions";
 const container = document.getElementById('canvas-container');
 
 const scene = new THREE.Scene();
+// TEMPORARY - for console debugging only. Since this file loads as an ES
+// module, its variables aren't normally reachable from the browser console.
+// Safe to delete these two lines once the axis debugging is done.
+window.scene = scene;
+window.THREE = THREE;
 scene.background = new THREE.Color(0xd9d9d9);
 
 const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
 // Rotated 90 degrees to the right from the original (-0.32, 0.83, 0.97)
 // framing, orbiting around the vertical (Y) axis at the same height/distance.
-// If this ends up rotated the wrong way, swap to (0.97, 0.83, 0.32) instead -
-// that's the same 90-degree turn in the opposite direction.
-camera.position.set(-0.97, 0.83, -0.32);
+camera.position.set(0.97, 0.83, 0.32);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
