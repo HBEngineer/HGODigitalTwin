@@ -405,8 +405,12 @@ document.getElementById('btn-load-factory').addEventListener('click', () => {
 // value below for that entry - nothing else needs to change.
 const AXIS_CONFIG = {
   PosX: { nodeName: 'Slide_X', axis: 'x', valueElementId: 'val-x', sign: 1 },
-  PosY: { nodeName: 'Slide_Y', axis: 'z', valueElementId: 'val-y', sign: 1 }, // confirmed: Y moves on local z, not y
-  PosZ: { nodeName: 'Slide_Z', axis: 'y', valueElementId: 'val-z', sign: -1 } // confirmed: Z moves on local y, and in the opposite direction
+  // Slide_X has a 90-degree rotation baked in, inherited by everything
+  // nested under it (Slide_Y, Slide_Z). That rotation swaps which local
+  // axis points along world X vs world Z (world Y/vertical is unaffected).
+  // Slide_Y's local X is the one that actually points along world Z here.
+  PosY: { nodeName: 'Slide_Y', axis: 'x', valueElementId: 'val-y', sign: 1 },
+  PosZ: { nodeName: 'Slide_Z', axis: 'y', valueElementId: 'val-z', sign: -1 } // confirmed correct - vertical (world Y) is unaffected by the rotation
 };
 
 // Populated once the model loads: { PosX: { node, axis, initial, target }, ... }
