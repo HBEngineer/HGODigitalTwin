@@ -32,7 +32,7 @@ const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerH
 // Rotated 90 degrees to the right from the original (-0.32, 0.83, 0.97)
 // framing, orbiting around the vertical (Y) axis at the same height/distance.
 // camera.position.set(0.97, 0.83, 0.32);
-camera.position.set(1.0, 0.60, 2.60);
+camera.position.set(-1.0, 0.60, 2.60);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
