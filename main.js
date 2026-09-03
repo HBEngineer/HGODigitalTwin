@@ -26,13 +26,12 @@ const scene = new THREE.Scene();
 // Safe to delete these two lines once the axis debugging is done.
 window.scene = scene;
 window.THREE = THREE;
-scene.background = new THREE.Color(0xd9d9d9);
+scene.background = new THREE.Color(0xc7ccd1);
 
 const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
 // Rotated 90 degrees to the right from the original (-0.32, 0.83, 0.97)
 // framing, orbiting around the vertical (Y) axis at the same height/distance.
-// camera.position.set(0.97, 0.83, 0.32);
-camera.position.set(-0.8, 0.80, 3.10);
+camera.position.set(0.97, 0.83, 0.32);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -77,20 +76,26 @@ const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 
 // --- LIGHTING SETUP ---
-const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1.0);
+const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1.2);
 hemiLight.position.set(20, 20, 20);
 scene.add(hemiLight);
 
-const keyLight = new THREE.DirectionalLight(0xffffff, 0.0);
-keyLight.position.set(-3, -3.5, -0.5);
+const keyLight = new THREE.DirectionalLight(0xffffff, 4.0);
+keyLight.position.set(4, 6, 4);
 keyLight.castShadow = true;
+// Without bias tuning, shadow maps commonly produce "shadow acne" - fine
+// self-shadowing streaks - on surfaces with tight ridges/grooves, like the
+// extrusion's rail profile. These two settings fix that.
+keyLight.shadow.bias = -0.0015;
+keyLight.shadow.normalBias = 0.02;
+keyLight.shadow.mapSize.set(2048, 2048);
 scene.add(keyLight);
 
-const fillLight = new THREE.DirectionalLight(0x2e2e2e, 7.3);
-fillLight.position.set(12, 10, 1);
+const fillLight = new THREE.DirectionalLight(0xffffff, 2.0);
+fillLight.position.set(-4, 3, -3);
 scene.add(fillLight);
 
-const ambientLight = new THREE.AmbientLight(0x616161, 2);
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
 scene.add(ambientLight);
 
 // Camera light (headlight) - follows the viewer so the side of the model
@@ -187,11 +192,11 @@ const LIGHTING_STORAGE_KEY = 'gantryDigitalTwin.lightingDefaults';
 // The values the scene was originally authored with. "Reset to Factory"
 // always returns to this configuration, regardless of what's been saved.
 const FACTORY_LIGHTING_CONFIG = {
-  hemi: { intensity: 1, position: { x: 20, y: 20, z: 20 } },
-  key: { intensity: 0.0, color: '#858585', position: { x: 20, y: 20, z: 20 } },
-  fill: { intensity: 7.3, color: '#2e2e2e', position: { x: 12, y: 10, z: 1 } },
-  ambient: { intensity: 2, color: '#616161' },
-  background: '#d9d9d9'
+  hemi: { intensity: 1.2, position: { x: 20, y: 20, z: 20 } },
+  key: { intensity: 4.0, color: '#ffffff', position: { x: 4, y: 6, z: 4 } },
+  fill: { intensity: 2.0, color: '#ffffff', position: { x: -4, y: 3, z: -3 } },
+  ambient: { intensity: 0.5, color: '#ffffff' },
+  background: '#c7ccd1'
 };
 
 // Maps each slider/color input id to a (light, property) setter, and each
