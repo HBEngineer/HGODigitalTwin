@@ -80,7 +80,7 @@ const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.7);
 hemiLight.position.set(20, 20, 20);
 scene.add(hemiLight);
 
-const keyLight = new THREE.DirectionalLight(0xffffff, 2.0);
+const keyLight = new THREE.DirectionalLight(0xffffff, 1.5);
 keyLight.position.set(4, 6, 4);
 keyLight.castShadow = true;
 // Without bias tuning, shadow maps commonly produce "shadow acne" - fine
