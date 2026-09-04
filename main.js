@@ -415,7 +415,7 @@ const AXIS_CONFIG = {
   // nested under it (Slide_Y, Slide_Z). That rotation swaps which local
   // axis points along world X vs world Z (world Y/vertical is unaffected).
   // Slide_Y's local X is the one that actually points along world Z here.
-  PosY: { nodeName: 'Slide_Y', axis: 'x', valueElementId: 'val-y', sign: -1 },
+  PosY: { nodeName: 'Slide_Y', axis: 'x', valueElementId: 'val-y', sign: 1 },
   PosZ: { nodeName: 'Slide_Z', axis: 'y', valueElementId: 'val-z', sign: -1 } // confirmed correct - vertical (world Y) is unaffected by the rotation
 };
 
