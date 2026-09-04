@@ -76,11 +76,11 @@ const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 
 // --- LIGHTING SETUP ---
-const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1.2);
+const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.7);
 hemiLight.position.set(20, 20, 20);
 scene.add(hemiLight);
 
-const keyLight = new THREE.DirectionalLight(0xffffff, 4.0);
+const keyLight = new THREE.DirectionalLight(0xffffff, 2.0);
 keyLight.position.set(4, 6, 4);
 keyLight.castShadow = true;
 // Without bias tuning, shadow maps commonly produce "shadow acne" - fine
@@ -95,7 +95,7 @@ const fillLight = new THREE.DirectionalLight(0xffffff, 2.0);
 fillLight.position.set(-4, 3, -3);
 scene.add(fillLight);
 
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+const ambientLight = new THREE.AmbientLight(0xffffff, 1);
 scene.add(ambientLight);
 
 // Camera light (headlight) - follows the viewer so the side of the model
