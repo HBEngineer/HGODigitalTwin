@@ -427,7 +427,7 @@ const axisState = {};
 // meter instead of 1mm). This converts mm -> m before applying as a
 // position offset.
 const SCALE_FACTOR = 0.001;
-const LERP_FACTOR = 0.3;
+const LERP_FACTOR = 0.05;
 
 const loader = new GLTFLoader();
 loader.load(
