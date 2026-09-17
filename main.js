@@ -76,8 +76,8 @@ const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 
 // --- DYNAMIC CAMERA LIGHT (Follows Viewpoint) ---
-const cameraLight = new THREE.DirectionalLight(0xffffff, 2);
-cameraLight.position.set(0, 0, 1); // Offset slightly forward from camera lens
+const cameraLight = new THREE.DirectionalLight(0xffffff, 1);
+cameraLight.position.set(0, 1, 1); // Offset slightly forward from camera lens
 camera.add(cameraLight);
 
 // --- SCENE LIGHTING SETUP ---
