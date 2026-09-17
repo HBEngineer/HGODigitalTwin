@@ -84,15 +84,15 @@ camera.add(cameraLight);
 const keyLight = new THREE.DirectionalLight(0xffffff, 4.0);
 keyLight.position.set(4, 6, 4);
 keyLight.castShadow = true;
-keyLight.shadow.bias = -0.0015;
-keyLight.shadow.normalBias = 0.02;
+keyLight.shadow.bias = -0.0005;        // CHANGED: Reduced bias to prevent shadow gap at the base
+keyLight.shadow.normalBias = 0.003;     // CHANGED: Reduced from 0.02 so shadows don't detach or fade at contact points
 keyLight.shadow.mapSize.set(2048, 2048);
 keyLight.shadow.camera.near = 0.5;
-keyLight.shadow.camera.far = 15;
-keyLight.shadow.camera.left = -3;
-keyLight.shadow.camera.right = 3;
-keyLight.shadow.camera.top = 3;
-keyLight.shadow.camera.bottom = -3;
+keyLight.shadow.camera.far = 10;        // CHANGED: Reduced far plane to focus shadow depth
+keyLight.shadow.camera.left = -1.8;     // CHANGED: Tightened shadow bounds around the gantry model size
+keyLight.shadow.camera.right = 1.8;    // CHANGED: Higher resolution shadow detail inside smaller bounds
+keyLight.shadow.camera.top = 1.8;      // CHANGED
+keyLight.shadow.camera.bottom = -1.8;  // CHANGED
 scene.add(keyLight);
 
 const fillLight = new THREE.DirectionalLight(0xbbe0ff, 3.0);
