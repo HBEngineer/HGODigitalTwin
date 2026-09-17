@@ -4,6 +4,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
 import { ARButton } from 'three/addons/webxr/ARButton.js';
 
 // ==========================================
@@ -21,102 +22,115 @@ const MQTT_TOPIC = "festo/hgosydney/positions";
 const container = document.getElementById('canvas-container');
 
 const scene = new THREE.Scene();
-// TEMPORARY - for console debugging only. Since this file loads as an ES
-// module, its variables aren't normally reachable from the browser console.
-// Safe to delete these two lines once the axis debugging is done.
 window.scene = scene;
 window.THREE = THREE;
-scene.background = new THREE.Color(0xc7ccd1);
+
+scene.background = new THREE.Color(0x2b2b2b);
 
 const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-// Rotated 90 degrees to the right from the original (-0.32, 0.83, 0.97)
-// framing, orbiting around the vertical (Y) axis at the same height/distance.
 camera.position.set(0, 0.7, 2.5);
 
+// Add Camera to Scene so attached lights track camera movements
+scene.add(camera);
+
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+window.renderer = renderer; // Exposed to window so console controls work live
+
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(window.devicePixelRatio);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-renderer.outputEncoding = THREE.sRGBEncoding;
+// Fixed outputColorSpace property (replaces deprecated outputEncoding)
+renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.2;
+renderer.toneMappingExposure = 1.0; // Lowered default tone mapping exposure
 
-// Enable WebXR
 renderer.xr.enabled = true;
-
 container.appendChild(renderer.domElement);
 
-// Append AR Button (WebXR — Android/Chrome only; iOS uses the separate
-// Quick Look button in index.html instead, since Safari has no WebXR AR).
-// We check support ourselves first, rather than letting ARButton show its
-// default disabled "AR NOT SUPPORTED" button, so unsupported devices see
-// no button at all.
+// --- ENVIRONMENT MAP (HDR Reflections) ---
+const rgbeLoader = new RGBELoader();
+// Updated to working CDN URL
+rgbeLoader.load('https://cdn.jsdelivr.net/gh/mrdoob/three.js@dev/examples/textures/equirectangular/venice_sunset_1k.hdr', (texture) => {
+  texture.mapping = THREE.EquirectangularReflectionMapping;
+  scene.environment = texture;
+  scene.environmentIntensity = 1.0; // Lowered default reflection intensity (try values like 0.5 - 1.0)
+});
+
 if (navigator.xr) {
   navigator.xr.isSessionSupported('immersive-ar')
     .then((supported) => {
       if (supported) {
         document.body.appendChild(ARButton.createButton(renderer, {
           requiredFeatures: ['hit-test'],
-          // Without this, regular page DOM (our scanning overlay) is hidden
-          // during the AR session - the XR compositor takes over full-screen
-          // rendering by default. 'root' is the DOM subtree allowed to show.
           optionalFeatures: ['dom-overlay'],
           domOverlay: { root: document.body }
         }));
       }
     })
-    .catch(() => {
-      // Support check itself failed - treat as unsupported, show nothing.
-    });
+    .catch(() => {});
 }
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 
-// --- LIGHTING SETUP ---
-const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.7);
-hemiLight.position.set(20, 20, 20);
-scene.add(hemiLight);
+// --- DYNAMIC CAMERA LIGHT (Follows Viewpoint) ---
+const cameraLight = new THREE.DirectionalLight(0xffffff, 2.2);
+cameraLight.position.set(0, 0, 1); // Offset slightly forward from camera lens
+camera.add(cameraLight);
 
-const keyLight = new THREE.DirectionalLight(0xffffff, 1.5);
+// --- SCENE LIGHTING SETUP ---
+const keyLight = new THREE.DirectionalLight(0xffffff, 4.0);
 keyLight.position.set(4, 6, 4);
 keyLight.castShadow = true;
-// Without bias tuning, shadow maps commonly produce "shadow acne" - fine
-// self-shadowing streaks - on surfaces with tight ridges/grooves, like the
-// extrusion's rail profile. These two settings fix that.
 keyLight.shadow.bias = -0.0015;
 keyLight.shadow.normalBias = 0.02;
 keyLight.shadow.mapSize.set(2048, 2048);
+keyLight.shadow.camera.near = 0.5;
+keyLight.shadow.camera.far = 15;
+keyLight.shadow.camera.left = -3;
+keyLight.shadow.camera.right = 3;
+keyLight.shadow.camera.top = 3;
+keyLight.shadow.camera.bottom = -3;
 scene.add(keyLight);
 
-const fillLight = new THREE.DirectionalLight(0xffffff, 2.0);
+const fillLight = new THREE.DirectionalLight(0xbbe0ff, 3.0);
 fillLight.position.set(-4, 3, -3);
 scene.add(fillLight);
 
-const ambientLight = new THREE.AmbientLight(0xffffff, 1);
+const ambientLight = new THREE.AmbientLight(0xedf5ff, 1.8);
 scene.add(ambientLight);
 
-// Camera light (headlight) - follows the viewer so the side of the model
-// facing the camera is always lit, regardless of orbit angle. Using a
-// directional light (instead of the previous point light) avoids the
-// "on-camera flash" hotspot, where a light sitting at the same position as
-// the camera reflects straight back into the lens off glossy surfaces
-// (this was washing out the blue actuator housings).
-const cameraLight = new THREE.DirectionalLight(0xffffff, 0.8);
-camera.add(cameraLight);
-cameraLight.target.position.set(0, 0, -1); // points forward, in the camera's local space
-camera.add(cameraLight.target);
-scene.add(camera); // camera must be in the scene graph for its child light/target to update
+const hemiLight = new THREE.HemisphereLight(0xb0e0e6, 0x555555, 1.6);
+hemiLight.position.set(0, 20, 0);
+scene.add(hemiLight);
 
-// Group to hold model and grid
+const BASE_INTENSITIES = {
+  key: 4.0,
+  fill: 3.0,
+  ambient: 1.8,
+  hemi: 1.6,
+  camera: 2.2
+};
+
+// --- AR GROUP & FLOOR MAT ---
 const arGroup = new THREE.Group();
 scene.add(arGroup);
 
-// --- GRID HELPER ---
-const gridHelper = new THREE.GridHelper(10, 20, 0xFFFFFF, 0x444444);
-gridHelper.position.y = -0.01;
+const floorGeo = new THREE.PlaneGeometry(10, 10);
+const floorMat = new THREE.MeshStandardMaterial({
+  color: 0xdcdcdc,
+  roughness: 0.8,
+  metalness: 0.1
+});
+const floorMesh = new THREE.Mesh(floorGeo, floorMat);
+floorMesh.rotation.x = -Math.PI / 2;
+floorMesh.receiveShadow = true;
+arGroup.add(floorMesh);
+
+const gridHelper = new THREE.GridHelper(10, 10, 0xbbbbbb, 0xcccccc);
+gridHelper.position.y = 0.001;
 arGroup.add(gridHelper);
 
 // WebXR Session handlers
@@ -124,9 +138,9 @@ let hitTestSource = null;
 let hitTestSourceRequested = false;
 let modelPlaced = false;
 let surfaceCurrentlyDetected = false;
-let firstDetectedAt = null; // when the surface was first seen, for stabilization
-const AUTO_PLACE_STABILIZE_MS = 600; // must track a surface steadily this long before auto-placing
-const hitMatrix = new THREE.Matrix4(); // stores the latest detected surface pose
+let firstDetectedAt = null;
+const AUTO_PLACE_STABILIZE_MS = 600;
+const hitMatrix = new THREE.Matrix4();
 
 const arScanOverlay = document.getElementById('ar-scan-overlay');
 const arScanText = document.getElementById('ar-scan-text');
@@ -148,8 +162,9 @@ function placeModelAt(matrix) {
 
 renderer.xr.addEventListener('sessionstart', () => {
   scene.background = null;
+  floorMesh.visible = false;
   gridHelper.visible = false;
-  arGroup.visible = false; // hidden until placed on a detected surface
+  arGroup.visible = false;
   modelPlaced = false;
   surfaceCurrentlyDetected = false;
   firstDetectedAt = null;
@@ -157,15 +172,15 @@ renderer.xr.addEventListener('sessionstart', () => {
   hitTestSource = null;
   showArScanOverlay('Starting AR...');
 });
+
 renderer.xr.addEventListener('sessionend', () => {
-  scene.background = new THREE.Color(document.getElementById('ctrl-bg-color').value);
+  scene.background = new THREE.Color(0x2b2b2b);
+  floorMesh.visible = true;
   gridHelper.visible = true;
   arGroup.visible = true;
   hideArScanOverlay();
 });
 
-// --- CONTROLLER (tap to reposition the model onto wherever you're currently
-// pointing, in case the auto-detected surface wasn't the one you wanted) ---
 const controller = renderer.xr.getController(0);
 controller.addEventListener('select', () => {
   if (surfaceCurrentlyDetected) {
@@ -177,261 +192,71 @@ controller.addEventListener('select', () => {
 scene.add(controller);
 
 // ==========================================
-// 3. RETRACTABLE UI & LIGHT CONTROL BINDINGS
+// 3. USER LIGHT CONTROLS
 // ==========================================
 const lightPanel = document.getElementById('light-panel');
 const panelHeader = document.getElementById('light-panel-header');
-const toggleIcon = document.getElementById('toggle-icon');
 
-panelHeader.addEventListener('click', () => {
-  lightPanel.classList.toggle('collapsed');
-});
-
-const LIGHTING_STORAGE_KEY = 'gantryDigitalTwin.lightingDefaults';
-
-// The values the scene was originally authored with. "Reset to Factory"
-// always returns to this configuration, regardless of what's been saved.
-const FACTORY_LIGHTING_CONFIG = {
-  hemi: { intensity: 1.2, position: { x: 20, y: 20, z: 20 } },
-  key: { intensity: 4.0, color: '#ffffff', position: { x: 4, y: 6, z: 4 } },
-  fill: { intensity: 2.0, color: '#ffffff', position: { x: -4, y: 3, z: -3 } },
-  ambient: { intensity: 0.5, color: '#ffffff' },
-  background: '#c7ccd1'
-};
-
-// Maps each slider/color input id to a (light, property) setter, and each
-// value to the label element that displays it. Keeping this table-driven
-// means adding another controllable light later only needs an entry here
-// plus matching markup in index.html.
-const lightControlBindings = [
-  { id: 'ctrl-hemi', labelId: 'lbl-hemi', decimals: 1, apply: (v) => { hemiLight.intensity = v; } },
-  { id: 'ctrl-hemi-x', labelId: 'lbl-hemi-x', decimals: 1, apply: (v) => { hemiLight.position.x = v; } },
-  { id: 'ctrl-hemi-y', labelId: 'lbl-hemi-y', decimals: 1, apply: (v) => { hemiLight.position.y = v; } },
-  { id: 'ctrl-hemi-z', labelId: 'lbl-hemi-z', decimals: 1, apply: (v) => { hemiLight.position.z = v; } },
-
-  { id: 'ctrl-key', labelId: 'lbl-key', decimals: 1, apply: (v) => { keyLight.intensity = v; } },
-  { id: 'ctrl-key-x', labelId: 'lbl-key-x', decimals: 1, apply: (v) => { keyLight.position.x = v; } },
-  { id: 'ctrl-key-y', labelId: 'lbl-key-y', decimals: 1, apply: (v) => { keyLight.position.y = v; } },
-  { id: 'ctrl-key-z', labelId: 'lbl-key-z', decimals: 1, apply: (v) => { keyLight.position.z = v; } },
-
-  { id: 'ctrl-fill', labelId: 'lbl-fill', decimals: 1, apply: (v) => { fillLight.intensity = v; } },
-  { id: 'ctrl-fill-x', labelId: 'lbl-fill-x', decimals: 1, apply: (v) => { fillLight.position.x = v; } },
-  { id: 'ctrl-fill-y', labelId: 'lbl-fill-y', decimals: 1, apply: (v) => { fillLight.position.y = v; } },
-  { id: 'ctrl-fill-z', labelId: 'lbl-fill-z', decimals: 1, apply: (v) => { fillLight.position.z = v; } },
-
-  { id: 'ctrl-ambient', labelId: 'lbl-ambient', decimals: 1, apply: (v) => { ambientLight.intensity = v; } }
-];
-
-lightControlBindings.forEach(({ id, labelId, decimals, apply }) => {
-  const input = document.getElementById(id);
-  if (!input) return;
-  input.addEventListener('input', (e) => {
-    const val = parseFloat(e.target.value);
-    apply(val);
-    if (labelId) {
-      const label = document.getElementById(labelId);
-      if (label) label.innerText = val.toFixed(decimals);
-    }
+if (panelHeader && lightPanel) {
+  panelHeader.addEventListener('click', () => {
+    lightPanel.classList.toggle('collapsed');
   });
-});
-
-// Color pickers (separate from the table above since they read a hex string,
-// not a float, and don't drive a numeric label).
-document.getElementById('ctrl-key-color').addEventListener('input', (e) => {
-  keyLight.color.set(e.target.value);
-});
-
-document.getElementById('ctrl-fill-color').addEventListener('input', (e) => {
-  fillLight.color.set(e.target.value);
-});
-
-document.getElementById('ctrl-ambient-color').addEventListener('input', (e) => {
-  ambientLight.color.set(e.target.value);
-});
-
-document.getElementById('ctrl-bg-color').addEventListener('input', (e) => {
-  if (!renderer.xr.isPresenting) {
-    scene.background.set(e.target.value);
-  }
-});
-
-// --- Reading / applying a full lighting configuration ---
-
-function readCurrentLightingConfig() {
-  return {
-    hemi: {
-      intensity: hemiLight.intensity,
-      position: { x: hemiLight.position.x, y: hemiLight.position.y, z: hemiLight.position.z }
-    },
-    key: {
-      intensity: keyLight.intensity,
-      color: '#' + keyLight.color.getHexString(),
-      position: { x: keyLight.position.x, y: keyLight.position.y, z: keyLight.position.z }
-    },
-    fill: {
-      intensity: fillLight.intensity,
-      color: '#' + fillLight.color.getHexString(),
-      position: { x: fillLight.position.x, y: fillLight.position.y, z: fillLight.position.z }
-    },
-    ambient: {
-      intensity: ambientLight.intensity,
-      color: '#' + ambientLight.color.getHexString()
-    },
-    background: '#' + scene.background.getHexString()
-  };
 }
 
-function applyLightingConfig(config) {
-  hemiLight.intensity = config.hemi.intensity;
-  hemiLight.position.set(config.hemi.position.x, config.hemi.position.y, config.hemi.position.z);
+const ctrlBrightness = document.getElementById('ctrl-brightness');
+const lblBrightness = document.getElementById('lbl-brightness');
 
-  keyLight.intensity = config.key.intensity;
-  keyLight.color.set(config.key.color);
-  keyLight.position.set(config.key.position.x, config.key.position.y, config.key.position.z);
-
-  fillLight.intensity = config.fill.intensity;
-  fillLight.color.set(config.fill.color);
-  fillLight.position.set(config.fill.position.x, config.fill.position.y, config.fill.position.z);
-
-  ambientLight.intensity = config.ambient.intensity;
-  ambientLight.color.set(config.ambient.color);
-
-  if (!renderer.xr.isPresenting) {
-    scene.background.set(config.background);
-  }
-
-  syncLightingUI(config);
+if (ctrlBrightness) {
+  ctrlBrightness.addEventListener('input', (e) => {
+    const scale = parseFloat(e.target.value);
+    keyLight.intensity = BASE_INTENSITIES.key * scale;
+    fillLight.intensity = BASE_INTENSITIES.fill * scale;
+    ambientLight.intensity = BASE_INTENSITIES.ambient * scale;
+    hemiLight.intensity = BASE_INTENSITIES.hemi * scale;
+    cameraLight.intensity = BASE_INTENSITIES.camera * scale;
+    if (lblBrightness) lblBrightness.innerText = `${Math.round(scale * 100)}%`;
+  });
 }
 
-// Pushes a config's values into every slider/color input and label so the
-// panel reflects whatever was just applied (on load, or after a reset).
-function syncLightingUI(config) {
-  const setRange = (id, labelId, value, decimals) => {
-    const input = document.getElementById(id);
-    if (input) input.value = value;
-    const label = document.getElementById(labelId);
-    if (label) label.innerText = value.toFixed(decimals);
-  };
-  const setColor = (id, value) => {
-    const input = document.getElementById(id);
-    if (input) input.value = value;
-  };
+const ctrlAngle = document.getElementById('ctrl-angle');
+const lblAngle = document.getElementById('lbl-angle');
+const LIGHT_RADIUS = 7.2;
 
-  setRange('ctrl-hemi', 'lbl-hemi', config.hemi.intensity, 1);
-  setRange('ctrl-hemi-x', 'lbl-hemi-x', config.hemi.position.x, 1);
-  setRange('ctrl-hemi-y', 'lbl-hemi-y', config.hemi.position.y, 1);
-  setRange('ctrl-hemi-z', 'lbl-hemi-z', config.hemi.position.z, 1);
-
-  setRange('ctrl-key', 'lbl-key', config.key.intensity, 1);
-  setColor('ctrl-key-color', config.key.color);
-  setRange('ctrl-key-x', 'lbl-key-x', config.key.position.x, 1);
-  setRange('ctrl-key-y', 'lbl-key-y', config.key.position.y, 1);
-  setRange('ctrl-key-z', 'lbl-key-z', config.key.position.z, 1);
-
-  setRange('ctrl-fill', 'lbl-fill', config.fill.intensity, 1);
-  setColor('ctrl-fill-color', config.fill.color);
-  setRange('ctrl-fill-x', 'lbl-fill-x', config.fill.position.x, 1);
-  setRange('ctrl-fill-y', 'lbl-fill-y', config.fill.position.y, 1);
-  setRange('ctrl-fill-z', 'lbl-fill-z', config.fill.position.z, 1);
-
-  setRange('ctrl-ambient', 'lbl-ambient', config.ambient.intensity, 1);
-  setColor('ctrl-ambient-color', config.ambient.color);
-
-  setColor('ctrl-bg-color', config.background);
+if (ctrlAngle) {
+  ctrlAngle.addEventListener('input', (e) => {
+    const deg = parseFloat(e.target.value);
+    const rad = (deg * Math.PI) / 180;
+    keyLight.position.x = Math.cos(rad) * LIGHT_RADIUS;
+    keyLight.position.z = Math.sin(rad) * LIGHT_RADIUS;
+    if (lblAngle) lblAngle.innerText = `${Math.round(deg)}°`;
+  });
 }
-
-function showSaveStatus(message) {
-  const statusElem = document.getElementById('save-status');
-  if (!statusElem) return;
-  statusElem.innerText = message;
-  clearTimeout(showSaveStatus._timer);
-  showSaveStatus._timer = setTimeout(() => { statusElem.innerText = ''; }, 2500);
-}
-
-// --- Save / Reset buttons ---
-
-document.getElementById('btn-save-default').addEventListener('click', () => {
-  const config = readCurrentLightingConfig();
-  try {
-    localStorage.setItem(LIGHTING_STORAGE_KEY, JSON.stringify(config));
-    showSaveStatus('Saved as default \u2713');
-  } catch (err) {
-    console.error('[LIGHTING] Failed to save default config:', err);
-    showSaveStatus('Save failed');
-  }
-});
-
-document.getElementById('btn-load-default').addEventListener('click', () => {
-  const saved = localStorage.getItem(LIGHTING_STORAGE_KEY);
-  if (!saved) {
-    showSaveStatus('No saved default yet');
-    return;
-  }
-  try {
-    applyLightingConfig(JSON.parse(saved));
-    showSaveStatus('Default loaded');
-  } catch (err) {
-    console.error('[LIGHTING] Failed to load saved config:', err);
-    showSaveStatus('Load failed');
-  }
-});
-
-document.getElementById('btn-load-factory').addEventListener('click', () => {
-  applyLightingConfig(FACTORY_LIGHTING_CONFIG);
-  showSaveStatus('Factory defaults restored');
-});
-
-// On startup, use a saved default if one exists; otherwise the scene keeps
-// the factory values it was already constructed with above.
-(function initLightingFromSavedDefault() {
-  const saved = localStorage.getItem(LIGHTING_STORAGE_KEY);
-  if (saved) {
-    try {
-      applyLightingConfig(JSON.parse(saved));
-      return;
-    } catch (err) {
-      console.warn('[LIGHTING] Saved config was invalid, using factory defaults:', err);
-    }
-  }
-  syncLightingUI(FACTORY_LIGHTING_CONFIG);
-})();
 
 // ==========================================
 // 4. LOAD GLB MODEL
 // ==========================================
-// Maps each MQTT payload key to the GLB node it drives and the LOCAL axis
-// that node moves along. Since this model is correctly kinematized (each
-// slide nested under the one it rides on), each node only ever needs to
-// move along a single local axis - the parenting handles the rest.
-//
-// IMPORTANT: "Slide_X" moving along local X is an assumption based on the
-// name, not a guarantee - glTF's Y-up export convention can remap which
-// local axis corresponds to a given real-world direction. If testing shows
-// a slide moving the wrong way (or not at all), just change the `axis`
-// value below for that entry - nothing else needs to change.
 const AXIS_CONFIG = {
   PosX: { nodeName: 'Slide_X', axis: 'z', valueElementId: 'val-x', sign: 1 },
-  // Slide_X has a 90-degree rotation baked in, inherited by everything
-  // nested under it (Slide_Y, Slide_Z). That rotation swaps which local
-  // axis points along world X vs world Z (world Y/vertical is unaffected).
-  // Slide_Y's local X is the one that actually points along world Z here.
-  PosY: { nodeName: 'Slide_Y', axis: 'z', valueElementId: 'val-y', sign: 1 },
-  PosZ: { nodeName: 'Slide_Z', axis: 'y', valueElementId: 'val-z', sign: -1 } // confirmed correct - vertical (world Y) is unaffected by the rotation
+  PosY: { nodeName: 'Slide_Y', axis: 'x', valueElementId: 'val-y', sign: -1 },
+  PosZ: { nodeName: 'Slide_Z', axis: 'y', valueElementId: 'val-z', sign: -1 }
 };
 
-// Populated once the model loads: { PosX: { node, axis, initial, target }, ... }
 const axisState = {};
-
-// MQTT payload values are in millimeters, but glTF/GLB world units are
-// meters by convention - confirmed empirically ({"PosX": 1} moved 1 full
-// meter instead of 1mm). This converts mm -> m before applying as a
-// position offset.
 const SCALE_FACTOR = 0.001;
 const LERP_FACTOR = 0.05;
+const MODEL_URL = './model/hgosydney_Kinetic.glb';
+
+window.GANTRY_CONFIG = {
+  AXIS_CONFIG,
+  SCALE_FACTOR,
+  LERP_FACTOR,
+  MODEL_URL,
+  mqttTargets: { PosX: 0, PosY: 0, PosZ: 0 }
+};
 
 const loader = new GLTFLoader();
 loader.load(
-  './model/hgosydney_Kinetic.glb',
+  MODEL_URL,
   (gltf) => {
     console.log('[MODEL] Loaded successfully!');
     const model = gltf.scene;
@@ -440,6 +265,13 @@ loader.load(
       if (child.isMesh) {
         child.castShadow = true;
         child.receiveShadow = true;
+
+        if (child.material) {
+          // Polished metallic finish
+          child.material.metalness = 0.90;
+          child.material.roughness = 0.18;
+          child.material.envMapIntensity = 1.0; // Lowered from 3.5 to match environment settings
+        }
       }
       Object.entries(AXIS_CONFIG).forEach(([key, cfg]) => {
         if (child.name === cfg.nodeName) {
@@ -454,28 +286,17 @@ loader.load(
       });
     });
 
-    // Log a warning for any configured axis whose node wasn't found in the
-    // model - much easier to spot than a silently-motionless slide later.
-    Object.entries(AXIS_CONFIG).forEach(([key, cfg]) => {
-      if (!axisState[key]) {
-        console.warn(`[MODEL] Node "${cfg.nodeName}" (for ${key}) was not found in the GLB.`);
-      }
-    });
-
     arGroup.add(model);
 
     const box = new THREE.Box3().setFromObject(model);
-    gridHelper.position.y = box.min.y - 0.001;
+    floorMesh.position.y = box.min.y;
+    gridHelper.position.y = box.min.y + 0.001;
 
     const center = box.getCenter(new THREE.Vector3());
     controls.target.copy(center);
     controls.update();
   },
-  (xhr) => {
-    if (xhr.total > 0) {
-      console.log(`[MODEL] ${(xhr.loaded / xhr.total * 100).toFixed(0)}% loaded`);
-    }
-  },
+  undefined,
   (error) => {
     console.error('[ERROR] Failed to load GLB model:', error);
   }
@@ -490,7 +311,6 @@ function animate(timestamp, frame) {
     node.position[axis] += (targetValue - node.position[axis]) * LERP_FACTOR;
   });
 
-  // --- WebXR hit-test: find real-world surfaces, auto-place on first detection ---
   if (renderer.xr.isPresenting && frame) {
     const session = renderer.xr.getSession();
     const referenceSpace = renderer.xr.getReferenceSpace();
@@ -520,12 +340,6 @@ function animate(timestamp, frame) {
         surfaceCurrentlyDetected = true;
 
         if (!modelPlaced) {
-          // Don't trust the very first hit - tracking is often noisy for a
-          // moment right after a surface is found. Require it to stay
-          // steady for AUTO_PLACE_STABILIZE_MS before committing, which is
-          // what was actually happening implicitly before (the user took a
-          // moment to aim before tapping) and is why placement felt more
-          // stable in the tap-to-place version.
           if (firstDetectedAt === null) {
             firstDetectedAt = timestamp;
             showArScanOverlay('Hold steady...');
@@ -538,8 +352,6 @@ function animate(timestamp, frame) {
       } else {
         surfaceCurrentlyDetected = false;
         if (!modelPlaced) {
-          // Lost tracking before we finished stabilizing - reset the timer
-          // rather than placing based on a stale/interrupted read.
           firstDetectedAt = null;
           showArScanOverlay('Move your phone to find a surface');
         }
@@ -551,7 +363,6 @@ function animate(timestamp, frame) {
   renderer.render(scene, camera);
 }
 
-// Handles both desktop and WebXR loops
 renderer.setAnimationLoop(animate);
 
 window.addEventListener('resize', () => {
@@ -564,7 +375,8 @@ window.addEventListener('resize', () => {
 // 6. UPDATE TARGET VALUES FROM MQTT
 // ==========================================
 function updateAxisPosition(key, positionVal) {
-  if (!axisState[key]) return; // node wasn't found in the GLB - see console warning at load time
+  window.GANTRY_CONFIG.mqttTargets[key] = positionVal;
+  if (!axisState[key]) return;
   axisState[key].target = positionVal;
   const valElem = document.getElementById(AXIS_CONFIG[key].valueElementId);
   if (valElem) valElem.innerText = `${positionVal} mm`;
