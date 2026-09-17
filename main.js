@@ -55,7 +55,7 @@ const rgbeLoader = new RGBELoader();
 rgbeLoader.load('https://cdn.jsdelivr.net/gh/mrdoob/three.js@dev/examples/textures/equirectangular/venice_sunset_1k.hdr', (texture) => {
   texture.mapping = THREE.EquirectangularReflectionMapping;
   scene.environment = texture;
-  scene.environmentIntensity = 0.5; // Lowered default reflection intensity (try values like 0.5 - 1.0)
+  scene.environmentIntensity = 0.8; // Lowered default reflection intensity (try values like 0.5 - 1.0)
 });
 
 if (navigator.xr) {
@@ -81,7 +81,7 @@ cameraLight.position.set(0, 0, 1); // Offset slightly forward from camera lens
 camera.add(cameraLight);
 
 // --- SCENE LIGHTING SETUP ---
-const keyLight = new THREE.DirectionalLight(0xffffff, 2.0);
+const keyLight = new THREE.DirectionalLight(0xffffff, 1.0);
 keyLight.position.set(4, 6, 4);
 keyLight.castShadow = true;
 keyLight.shadow.bias = -0.0005;        // CHANGED: Reduced bias to prevent shadow gap at the base
@@ -95,7 +95,7 @@ keyLight.shadow.camera.top = 1.8;      // CHANGED
 keyLight.shadow.camera.bottom = -1.8;  // CHANGED
 scene.add(keyLight);
 
-const fillLight = new THREE.DirectionalLight(0xbbe0ff, 1);
+const fillLight = new THREE.DirectionalLight(0xbbe0ff, 0.5);
 fillLight.position.set(-4, 3, -3);
 scene.add(fillLight);
 
