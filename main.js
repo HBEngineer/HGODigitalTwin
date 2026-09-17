@@ -81,7 +81,7 @@ cameraLight.position.set(0, 0, 1); // Offset slightly forward from camera lens
 camera.add(cameraLight);
 
 // --- SCENE LIGHTING SETUP ---
-const keyLight = new THREE.DirectionalLight(0xffffff, 4.0);
+const keyLight = new THREE.DirectionalLight(0xffffff, 2.0);
 keyLight.position.set(4, 6, 4);
 keyLight.castShadow = true;
 keyLight.shadow.bias = -0.0005;        // CHANGED: Reduced bias to prevent shadow gap at the base
