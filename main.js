@@ -95,11 +95,11 @@ keyLight.shadow.camera.top = 1.8;      // CHANGED
 keyLight.shadow.camera.bottom = -1.8;  // CHANGED
 scene.add(keyLight);
 
-const fillLight = new THREE.DirectionalLight(0xbbe0ff, 3.0);
+const fillLight = new THREE.DirectionalLight(0xbbe0ff, 2.0);
 fillLight.position.set(-4, 3, -3);
 scene.add(fillLight);
 
-const ambientLight = new THREE.AmbientLight(0xedf5ff, 1.8);
+const ambientLight = new THREE.AmbientLight(0xedf5ff, 0.8);
 scene.add(ambientLight);
 
 const hemiLight = new THREE.HemisphereLight(0xb0e0e6, 0x555555, 1.6);
