@@ -55,7 +55,7 @@ const rgbeLoader = new RGBELoader();
 rgbeLoader.load('https://cdn.jsdelivr.net/gh/mrdoob/three.js@dev/examples/textures/equirectangular/venice_sunset_1k.hdr', (texture) => {
   texture.mapping = THREE.EquirectangularReflectionMapping;
   scene.environment = texture;
-  scene.environmentIntensity = 0.4; // Lowered default reflection intensity (try values like 0.5 - 1.0)
+  scene.environmentIntensity = 0.5; // Lowered default reflection intensity (try values like 0.5 - 1.0)
 });
 
 if (navigator.xr) {
@@ -76,7 +76,7 @@ const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 
 // --- DYNAMIC CAMERA LIGHT (Follows Viewpoint) ---
-const cameraLight = new THREE.DirectionalLight(0xffffff, 1);
+const cameraLight = new THREE.DirectionalLight(0xffffff, 2);
 cameraLight.position.set(0, 1, 1); // Offset slightly forward from camera lens
 camera.add(cameraLight);
 
