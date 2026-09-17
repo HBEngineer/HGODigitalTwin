@@ -237,7 +237,7 @@ if (ctrlAngle) {
 // ==========================================
 const AXIS_CONFIG = {
   PosX: { nodeName: 'Slide_X', axis: 'z', valueElementId: 'val-x', sign: 1 },
-  PosY: { nodeName: 'Slide_Y', axis: 'x', valueElementId: 'val-y', sign: -1 },
+  PosY: { nodeName: 'Slide_Y', axis: 'z', valueElementId: 'val-y', sign: 1 },
   PosZ: { nodeName: 'Slide_Z', axis: 'y', valueElementId: 'val-z', sign: -1 }
 };
 
