@@ -268,8 +268,8 @@ loader.load(
 
         if (child.material) {
           // Polished metallic finish
-          child.material.metalness = 0.90;
-          child.material.roughness = 0.18;
+          //child.material.metalness = 0.90;
+          //child.material.roughness = 0.18;
           child.material.envMapIntensity = 1.0; // Lowered from 3.5 to match environment settings
         }
       }
