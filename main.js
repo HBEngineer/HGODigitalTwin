@@ -76,12 +76,12 @@ const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 
 // --- DYNAMIC CAMERA LIGHT (Follows Viewpoint) ---
-const cameraLight = new THREE.DirectionalLight(0xffffff, 2);
+const cameraLight = new THREE.DirectionalLight(0xffffff, 1.5);
 cameraLight.position.set(0, 1, 1); // Offset slightly forward from camera lens
 camera.add(cameraLight);
 
 // --- SCENE LIGHTING SETUP ---
-const keyLight = new THREE.DirectionalLight(0xffffff, 1.0);
+const keyLight = new THREE.DirectionalLight(0xffffff, 0.8);
 keyLight.position.set(4, 6, 4);
 keyLight.castShadow = true;
 keyLight.shadow.bias = -0.0005;        // CHANGED: Reduced bias to prevent shadow gap at the base
@@ -95,23 +95,23 @@ keyLight.shadow.camera.top = 1.8;      // CHANGED
 keyLight.shadow.camera.bottom = -1.8;  // CHANGED
 scene.add(keyLight);
 
-const fillLight = new THREE.DirectionalLight(0xbbe0ff, 0.5);
+const fillLight = new THREE.DirectionalLight(0xbbe0ff, 0.3);
 fillLight.position.set(-4, 3, -3);
 scene.add(fillLight);
 
-const ambientLight = new THREE.AmbientLight(0xedf5ff, 0.5);
+const ambientLight = new THREE.AmbientLight(0xedf5ff, 0.3);
 scene.add(ambientLight);
 
-const hemiLight = new THREE.HemisphereLight(0xb0e0e6, 0x555555, 1);
+const hemiLight = new THREE.HemisphereLight(0xb0e0e6, 0x555555, 0.6);
 hemiLight.position.set(0, 20, 0);
 scene.add(hemiLight);
 
 const BASE_INTENSITIES = {
-  key: 4.0,
-  fill: 3.0,
-  ambient: 1.8,
-  hemi: 1.6,
-  camera: 2.2
+  key: 2.0,
+  fill: 1.0,
+  ambient: 1,
+  hemi: 1,
+  camera: 2
 };
 
 // --- AR GROUP & FLOOR MAT ---
