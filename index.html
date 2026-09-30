@@ -11,12 +11,15 @@
   <!-- External CSS -->
   <link rel="stylesheet" href="./style.css" />
   
-    {
-      "imports": {
-        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
-      }
+  <!-- Three.js Core & Addons (ES modules — ARButton is only ever published
+       as a module, so the whole three.js stack must load this way too) -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/"
     }
+  }
   </script>
 
   <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
@@ -30,6 +33,8 @@
   <script src="https://cdn.jsdelivr.net/npm/@8thwall/engine-binary@1/dist/xr.js" async crossorigin="anonymous" data-preload-chunks="slam"></script>
   <script src="https://cdn.jsdelivr.net/npm/@8thwall/xrextras@1/dist/xrextras.js" crossorigin="anonymous"></script>
 
+  <script data-goatcounter="https://hugoben.goatcounter.com/count"
+        async src="//gc.zgo.at/count.js"></script>
     
 </head>
 <body>
