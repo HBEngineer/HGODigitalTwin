@@ -119,21 +119,21 @@
           // lights, since this is a separate THREE instance. Matches the
           // same values as main.js's current defaults; if you retune the
           // lighting there, update these to match.
-          const hemi = new CapturedTHREE.HemisphereLight(0xb0e0e6, 0x555555, 1.5);
+          const hemi = new CapturedTHREE.HemisphereLight(0xb0e0e6, 0x555555, 2);
           hemi.position.set(0, 20, 0);
           scene.add(hemi);
 
-          const key = new CapturedTHREE.DirectionalLight(0xffffff, 1.5);
+          const key = new CapturedTHREE.DirectionalLight(0xffffff, 2);
           key.position.set(4, 6, 4);
           scene.add(key);
 
-          const fill = new CapturedTHREE.DirectionalLight(0xbbe0ff, 1);
+          const fill = new CapturedTHREE.DirectionalLight(0xbbe0ff, 1.5);
           fill.position.set(-4, 3, -3);
           scene.add(fill);
 
-          scene.add(new CapturedTHREE.AmbientLight(0xedf5ff, 0.5));
+          scene.add(new CapturedTHREE.AmbientLight(0xedf5ff, 1));
 
-          const arCameraLight = new CapturedTHREE.DirectionalLight(0xffffff, 2.5);
+          const arCameraLight = new CapturedTHREE.DirectionalLight(0xffffff, 3);
           arCameraLight.position.set(0, 1, 1);
           XR8.Threejs.xrScene().camera.add(arCameraLight);
 
